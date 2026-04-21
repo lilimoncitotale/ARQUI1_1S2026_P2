@@ -46,6 +46,9 @@ menu_op8: .ascii "7. Aritmetica\n"
 menu_op2: .ascii "8. Salir\n"
 .equ MENU_OP2_LEN, . - menu_op2
 
+menu_op9: .ascii "9. Cargar nueva matriz\n"
+.equ MENU_OP9_LEN, . - menu_op9
+
 arith_welc: .ascii "\n--- Submenu Aritmetica ---\n"
 .equ ARITH_WELC_LEN, . - arith_welc
 
@@ -153,6 +156,9 @@ _start:
     mov x1, #MSG_TITTLE_LEN
     bl print_str
 
+    b input_matrix
+
+input_matrix:
     //pedir filas
     ldr x0, =prompt_r
     mov x1, #PROMPT_R_LEN
@@ -327,6 +333,10 @@ menu_loop:
     mov x1, #MENU_OP8_LEN
     bl print_str
 
+    ldr x0, = menu_op9
+    mov x1, #MENU_OP9_LEN
+    bl print_str
+
     ldr x0, = menu_op2
     mov x1, #MENU_OP2_LEN
     bl print_str
@@ -363,10 +373,20 @@ menu_loop:
     cmp x25, #8
     b.eq menu_exit
 
+    cmp x25, #9
+    b.eq menu_reload_matrix
+
     ldr x0, = msg_op_err
     mov x1, #MSG_OP_ERR_LEN
     bl print_str
     b menu_loop
+
+menu_reload_matrix:
+    bl free_and_reset_all
+    ldr x0, =msg_tittle
+    mov x1, #MSG_TITTLE_LEN
+    bl print_str
+    b input_matrix
 
 menu_show:
     b print_matrix
@@ -1123,6 +1143,30 @@ free_matrix:
     ret
 done:
     b menu_loop
+
+free_and_reset_all:
+    stp x29, x30, [sp, #-16]!
+    mov x29, sp
+
+    bl cleanup_all
+
+    mov x0, #0
+    ldr x9, =ptr_matrix
+    str x0, [x9]    //ptr_matrix = 0
+    ldr x9, =ptr_matrix_b
+    str x0, [x9]    //ptr_matrix_b = 0
+    ldr x9, =ptr_matrix_res
+    str x0, [x9]    //ptr_matrix_res = 0
+
+    ldr x9, =sz_matrix
+    str x0, [x9]    //sz_matrix = 0
+    ldr x9, =sz_matrix_b
+    str x0, [x9]    //sz_matrix_b = 0
+    ldr x9, =sz_matrix_res
+    str x0, [x9]    //sz_matrix_res = 0
+
+    ldp x29, x30, [sp], #16
+    ret
 
 cleanup_all:
     stp x29, x30, [sp, #-16]!
