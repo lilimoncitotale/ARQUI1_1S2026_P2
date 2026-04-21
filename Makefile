@@ -13,6 +13,7 @@ OPS_TR_OBJ = $(BUILD)/ops_transpose.o
 OPS_DET_OBJ = $(BUILD)/ops_determinant.o
 OPS_GAUSS_OBJ = $(BUILD)/ops_gauss.o
 OPS_INV_OBJ = $(BUILD)/ops_det_inv.o
+OPS_ARITH_OBJ = $(BUILD)/ops_arith.o
 FIXED_MATH_OBJ = $(BUILD)/fixed_math.o
 
 MAIN_BIN = $(BUILD)/app_main
@@ -44,6 +45,9 @@ $(OPS_GAUSS_OBJ): src/ops_gauss.s | $(BUILD)
 $(OPS_INV_OBJ): src/ops_det_inv.s | $(BUILD)
 	$(AS) src/ops_det_inv.s -o $(OPS_INV_OBJ)
 
+$(OPS_ARITH_OBJ): src/ops_arith.s | $(BUILD)
+	$(AS) src/ops_arith.s -o $(OPS_ARITH_OBJ)
+
 $(FIXED_MATH_OBJ): src/fixed_math.s | $(BUILD)
 	$(AS) src/fixed_math.s -o $(FIXED_MATH_OBJ)
 
@@ -53,8 +57,8 @@ $(TEST_INPUT_OBJ): src/test_input_matrix.s | $(BUILD)
 $(TEST_ROW_OBJ): src/test_rowmajor.s | $(BUILD)
 	$(AS) src/test_rowmajor.s -o $(TEST_ROW_OBJ)
 
-main: $(MAIN_OBJ) $(IO_OBJ) $(OPS_ID_OBJ) $(OPS_TR_OBJ) $(OPS_DET_OBJ) $(OPS_GAUSS_OBJ) $(OPS_INV_OBJ) $(FIXED_MATH_OBJ)
-	$(LD) $(MAIN_OBJ) $(IO_OBJ) $(OPS_ID_OBJ) $(OPS_TR_OBJ) $(OPS_DET_OBJ) $(OPS_GAUSS_OBJ) $(OPS_INV_OBJ) $(FIXED_MATH_OBJ) -o $(MAIN_BIN)
+main: $(MAIN_OBJ) $(IO_OBJ) $(OPS_ID_OBJ) $(OPS_TR_OBJ) $(OPS_DET_OBJ) $(OPS_GAUSS_OBJ) $(OPS_INV_OBJ) $(OPS_ARITH_OBJ) $(FIXED_MATH_OBJ)
+	$(LD) $(MAIN_OBJ) $(IO_OBJ) $(OPS_ID_OBJ) $(OPS_TR_OBJ) $(OPS_DET_OBJ) $(OPS_GAUSS_OBJ) $(OPS_INV_OBJ) $(OPS_ARITH_OBJ) $(FIXED_MATH_OBJ) -o $(MAIN_BIN)
 
 test-input: $(TEST_INPUT_OBJ) $(IO_OBJ)
 	$(LD) $(TEST_INPUT_OBJ) $(IO_OBJ) -o $(TEST_INPUT_BIN)
