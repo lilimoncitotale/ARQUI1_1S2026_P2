@@ -2,6 +2,8 @@
 .extern fixed_mul
 .extern fixed_div
 .extern fixed_abs
+.extern debug_print_matrix
+.extern debug_verbose
 
 
 .section .text
@@ -58,6 +60,16 @@ ga_copy_loop:
 
 ga_start:
     mov x23, #0          // k = 0
+
+    // debug snapshot inicial (si verbose)
+    ldr x9, =debug_verbose
+    ldr w9, [x9]
+    cbz w9, .Lga_skip_dbg_init
+    mov x0, x20
+    mov x1, x21
+    mov x2, x22
+    bl debug_print_matrix
+.Lga_skip_dbg_init:
 
 ga_k_loop:
     sub x11, x21, #1
@@ -224,6 +236,15 @@ ga_i_next:
     b ga_i_loop
 
 ga_k_next:
+    // snapshot al final de iteracion k (si verbose)
+    ldr x9, =debug_verbose
+    ldr w9, [x9]
+    cbz w9, .Lga_skip_dbg_k
+    mov x0, x20
+    mov x1, x21
+    mov x2, x22
+    bl debug_print_matrix
+.Lga_skip_dbg_k:
     add x23, x23, #1
     b ga_k_loop
 

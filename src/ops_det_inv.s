@@ -2,6 +2,8 @@
 .extern fixed_mul
 .extern fixed_div
 .extern fixed_abs
+.extern debug_print_matrix
+.extern debug_verbose
 
 .section .text
 
@@ -117,6 +119,16 @@ inv_build_i_next:
 
 inv_gj_start:
     mov x25, #0         //k = 0
+
+    // debug snapshot inicial (augmented matrix)
+    ldr x9, =debug_verbose
+    ldr w9, [x9]
+    cbz w9, .Linv_skip_dbg_init
+    mov x0, x23    // aug base
+    mov x1, x21    // rows (n)
+    mov x2, x24    // cols (2n)
+    bl debug_print_matrix
+.Linv_skip_dbg_init:
 
 inv_k_loop:
     cmp x25, x21
@@ -296,6 +308,15 @@ inv_elim_i_next:
     b inv_elim_i
 
 inv_k_next:
+    // debug snapshot al final de iteracion k
+    ldr x9, =debug_verbose
+    ldr w9, [x9]
+    cbz w9, .Linv_skip_dbg_k
+    mov x0, x23    // aug base
+    mov x1, x21    // rows
+    mov x2, x24    // cols
+    bl debug_print_matrix
+.Linv_skip_dbg_k:
     add x25, x25, #1
     b inv_k_loop
 

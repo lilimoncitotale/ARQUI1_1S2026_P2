@@ -49,6 +49,9 @@ menu_op2: .ascii "8. Salir\n"
 menu_op9: .ascii "9. Cargar nueva matriz\n"
 .equ MENU_OP9_LEN, . - menu_op9
 
+menu_op10: .ascii "10. Toggle verbose (Gauss/Gauss-Jordan)\n"
+.equ MENU_OP10_LEN, . - menu_op10
+
 arith_welc: .ascii "\n--- Submenu Aritmetica ---\n"
 .equ ARITH_WELC_LEN, . - arith_welc
 
@@ -93,6 +96,51 @@ msg_arith_sing: .ascii "Division: matriz B singular (no invertible)\n"
 
 msg_tittle: .ascii "Test matriz MxN (row-major)\n"
 .equ MSG_TITTLE_LEN, . - msg_tittle
+
+msg_sel_id: .ascii "\n[Operacion] Matriz identidad\n"
+.equ MSG_SEL_ID_LEN, . - msg_sel_id
+
+msg_sel_tr: .ascii "\n[Operacion] Transpuesta\n"
+.equ MSG_SEL_TR_LEN, . - msg_sel_tr
+
+msg_sel_det: .ascii "\n[Operacion] Determinante\n"
+.equ MSG_SEL_DET_LEN, . - msg_sel_det
+
+msg_sel_gauss: .ascii "\n[Operacion] Gauss triangular superior\n"
+.equ MSG_SEL_GAUSS_LEN, . - msg_sel_gauss
+
+msg_sel_inv: .ascii "\n[Operacion] Inversa (Gauss-Jordan)\n"
+.equ MSG_SEL_INV_LEN, . - msg_sel_inv
+
+msg_sel_add: .ascii "\n[Aritmetica] Suma A+B\n"
+.equ MSG_SEL_ADD_LEN, . - msg_sel_add
+
+msg_sel_sub: .ascii "\n[Aritmetica] Resta A-B\n"
+.equ MSG_SEL_SUB_LEN, . - msg_sel_sub
+
+msg_sel_had: .ascii "\n[Aritmetica] Multiplicacion punto A.*B\n"
+.equ MSG_SEL_HAD_LEN, . - msg_sel_had
+
+msg_sel_mm: .ascii "\n[Aritmetica] Multiplicacion cruz A x B\n"
+.equ MSG_SEL_MM_LEN, . - msg_sel_mm
+
+msg_sel_div: .ascii "\n[Aritmetica] Division A * inv(B)\n"
+.equ MSG_SEL_DIV_LEN, . - msg_sel_div
+
+msg_b_loaded: .ascii "Matriz B cargada correctamente\n"
+.equ MSG_B_LOADED_LEN, . - msg_b_loaded
+
+msg_reload: .ascii "\nRecargando matriz...\n"
+.equ MSG_RELOAD_LEN, . - msg_reload
+
+menu_dbg_on: .ascii "[DEBUG] Verbose ON\n"
+.equ MENU_DBG_ON_LEN, . - menu_dbg_on
+
+menu_dbg_off: .ascii "[DEBUG] Verbose OFF\n"
+.equ MENU_DBG_OFF_LEN, . - menu_dbg_off
+
+msg_dbg_snapshot: .ascii "[DEBUG] Snapshot:\n"
+.equ MSG_DBG_SNAPSHOT_LEN, . - msg_dbg_snapshot
 
 prompt_r: .ascii "Ingrese filas (1..10)"
 .equ PROMPT_R_LEN, . - prompt_r
@@ -147,6 +195,9 @@ sz_matrix_res: .skip 8 //para manejo dinámico de matrices (almacena rows y cols
 
 inbuf: .skip 64
 outbuf: .skip 32
+
+debug_verbose: .skip 4
+    .global debug_verbose
 
 .section .text
 _start:
@@ -337,6 +388,10 @@ menu_loop:
     mov x1, #MENU_OP9_LEN
     bl print_str
 
+    ldr x0, = menu_op10
+    mov x1, #MENU_OP10_LEN
+    bl print_str
+
     ldr x0, = menu_op2
     mov x1, #MENU_OP2_LEN
     bl print_str
@@ -376,6 +431,9 @@ menu_loop:
     cmp x25, #9
     b.eq menu_reload_matrix
 
+    cmp x25, #10
+    b.eq menu_toggle_debug
+
     ldr x0, = msg_op_err
     mov x1, #MSG_OP_ERR_LEN
     bl print_str
@@ -383,10 +441,31 @@ menu_loop:
 
 menu_reload_matrix:
     bl free_and_reset_all
+    ldr x0, =msg_reload
+    mov x1, #MSG_RELOAD_LEN
+    bl print_str
     ldr x0, =msg_tittle
     mov x1, #MSG_TITTLE_LEN
     bl print_str
     b input_matrix
+
+menu_toggle_debug:
+    ldr x9, =debug_verbose
+    ldr w10, [x9]
+    eor w10, w10, #1
+    str w10, [x9]
+    cbz w10, menu_toggle_dbg_off
+    // dbg on
+    ldr x0, =menu_dbg_on
+    mov x1, #MENU_DBG_ON_LEN
+    bl print_str
+    b menu_loop
+
+menu_toggle_dbg_off:
+    ldr x0, =menu_dbg_off
+    mov x1, #MENU_DBG_OFF_LEN
+    bl print_str
+    b menu_loop
 
 menu_show:
     b print_matrix
@@ -394,6 +473,10 @@ menu_show:
 //-----------------------------LLAMADAS A MODULOS-----------------------------
 //----------------------------LLAMADA A GAUSS JORDAN-----------------------
 call_op_inverse:
+    ldr x0, =msg_sel_inv
+    mov x1, #MSG_SEL_INV_LEN
+    bl print_str
+
     ldr x9, =ptr_matrix
     ldr x1, [x9]
     ldr x9, =ptr_matrix_res
@@ -422,6 +505,10 @@ inv_singular:
     b menu_loop
 //------------------------------LLAMADA A GAUSS-----------------------------
 call_op_gauss:
+    ldr x0, =msg_sel_gauss
+    mov x1, #MSG_SEL_GAUSS_LEN
+    bl print_str
+
     ldr x9, =ptr_matrix
     ldr x1, [x9]
     ldr x9, =ptr_matrix_res
@@ -447,6 +534,10 @@ gauss_pivot_zero:
     b menu_loop
 //------------------------------LLAMADA A DETERMINANTE-----------------------------
 call_op_determinant:
+    ldr x0, =msg_sel_det
+    mov x1, #MSG_SEL_DET_LEN
+    bl print_str
+
     ldr x9, =ptr_matrix
     ldr x1, [x9]
     mov x2, x23
@@ -474,6 +565,10 @@ call_op_determinant:
     b det_print_abs
 //-----------------------------LLAMADA A TRANSPOSE-----------------------------
 call_op_transpose:
+    ldr x0, =msg_sel_tr
+    mov x1, #MSG_SEL_TR_LEN
+    bl print_str
+
     ldr x9, =ptr_matrix
     ldr x1, [x9]
     ldr x9, =ptr_matrix_res
@@ -492,6 +587,10 @@ call_op_transpose:
 
 //-----------------------------LLAMADA A IDENTITY-----------------------------
 call_op_identity:
+    ldr x0, =msg_sel_id
+    mov x1, #MSG_SEL_ID_LEN
+    bl print_str
+
     ldr x9, =ptr_matrix_res
     ldr x1, [x9]
     mov x2, x23
@@ -587,6 +686,20 @@ arith_menu:
     b arith_menu
 
 arith_call_add:
+    ldr x0, =msg_sel_add
+    mov x1, #MSG_SEL_ADD_LEN
+    bl print_str
+
+    ldr x9, =ptr_matrix
+    ldr x1, [x9]
+    ldr x9, =ptr_matrix_b
+    ldr x2, [x9]
+    ldr x9, =ptr_matrix_res
+    ldr x3, [x9]
+    mov x4, x23
+    mov x5, x24
+    mov x6, x17
+    mov x7, x18
     bl op_add
     cmp x0, #0
     b.ne arith_bad_dims
@@ -597,6 +710,20 @@ arith_call_add:
     b print_result_dyn
 
 arith_call_sub:
+    ldr x0, =msg_sel_sub
+    mov x1, #MSG_SEL_SUB_LEN
+    bl print_str
+
+    ldr x9, =ptr_matrix
+    ldr x1, [x9]
+    ldr x9, =ptr_matrix_b
+    ldr x2, [x9]
+    ldr x9, =ptr_matrix_res
+    ldr x3, [x9]
+    mov x4, x23
+    mov x5, x24
+    mov x6, x17
+    mov x7, x18
     bl op_sub
     cmp x0, #0
     b.ne arith_bad_dims
@@ -607,6 +734,20 @@ arith_call_sub:
     b print_result_dyn
 
 arith_call_had:
+ldr x0, =msg_sel_had
+    mov x1, #MSG_SEL_HAD_LEN
+    bl print_str
+
+    ldr x9, =ptr_matrix
+    ldr x1, [x9]
+    ldr x9, =ptr_matrix_b
+    ldr x2, [x9]
+    ldr x9, =ptr_matrix_res
+    ldr x3, [x9]
+    mov x4, x23
+    mov x5, x24
+    mov x6, x17
+    mov x7, x18
     bl op_hadamard
     cmp x0, #0
     b.ne arith_bad_dims
@@ -617,6 +758,20 @@ arith_call_had:
     b print_result_dyn
 
 arith_call_matmul:
+    ldr x0, =msg_sel_mm
+    mov x1, #MSG_SEL_MM_LEN
+    bl print_str
+
+    ldr x9, =ptr_matrix
+    ldr x1, [x9]
+    ldr x9, =ptr_matrix_b
+    ldr x2, [x9]
+    ldr x9, =ptr_matrix_res
+    ldr x3, [x9]
+    mov x4, x23
+    mov x5, x24
+    mov x6, x17
+    mov x7, x18
     bl op_matmul
     cmp x0, #0
     b.ne arith_bad_dims
@@ -628,6 +783,20 @@ arith_call_matmul:
 
 
 arith_call_div:
+    ldr x0, =msg_sel_div
+    mov x1, #MSG_SEL_DIV_LEN
+    bl print_str
+
+    ldr x9, =ptr_matrix
+    ldr x1, [x9]
+    ldr x9, =ptr_matrix_b
+    ldr x2, [x9]
+    ldr x9, =ptr_matrix_res
+    ldr x3, [x9]
+    mov x4, x23
+    mov x5, x24
+    mov x6, x17
+    mov x7, x18
     bl op_div   //A * inv(B)
     cmp x0, #0
     b.eq arith_div_ok
@@ -790,6 +959,9 @@ load_b_next_i:
     b load_b_i
 
 load_b_ok:
+    ldr x0, =msg_b_loaded
+    mov x1, #MSG_B_LOADED_LEN
+    bl print_str
     mov x0, #0
     b load_b_end
 
@@ -1143,6 +1315,87 @@ free_matrix:
     ret
 done:
     b menu_loop
+
+// debug helper: imprime una matriz (ptr, rows, cols)
+.global debug_print_matrix
+debug_print_matrix:
+    stp x29, x30, [sp, #-16]!
+    mov x29, sp
+    // save x19-x26 (callee-saved) used by this helper
+    stp x19, x20, [sp, #-16]!
+    stp x21, x22, [sp, #-16]!
+    stp x23, x24, [sp, #-16]!
+    stp x25, x26, [sp, #-16]!
+
+    // guardar args en registros callee-saved
+    mov x19, x0    // base ptr
+    mov x20, x1    // rows
+    mov x21, x2    // cols
+
+    // header
+    ldr x0, =msg_dbg_snapshot
+    mov x1, #MSG_DBG_SNAPSHOT_LEN
+    bl print_str
+
+    mov x22, #0    // i = 0
+
+dbg_pr_i:
+    cmp x22, x20
+    b.ge dbg_pr_done
+
+    mov x23, #0    // j = 0
+dbg_pr_j:
+    cmp x23, x21
+    b.ge dbg_pr_endrow
+
+    // addr = base + ((i*cols + j)*4)
+    mul x24, x22, x21
+    add x24, x24, x23
+    lsl x24, x24, #2
+    add x25, x19, x24
+    ldrsw x26, [x25]
+
+    cmp x26, #0
+    b.ge dbg_pr_val_abs
+    ldr x0, =minus
+    mov x1, #1
+    bl print_str
+    neg x26, x26
+
+dbg_pr_val_abs:
+    mov x0, x26
+    ldr x1, =outbuf
+    bl fixed_to_ascii
+    mov x1, x0
+    ldr x0, =outbuf
+    bl print_str
+
+    add x11, x21, #-1
+    cmp x23, x11
+    b.eq dbg_pr_no_sp
+    ldr x0, =sp
+    mov x1, #1
+    bl print_str
+
+dbg_pr_no_sp:
+    add x23, x23, #1
+    b dbg_pr_j
+
+dbg_pr_endrow:
+    ldr x0, =nl
+    mov x1, #1
+    bl print_str
+    add x22, x22, #1
+    b dbg_pr_i
+
+dbg_pr_done:
+    // restore x25-x26, x23-x24, x21-x22, x19-x20
+    ldp x25, x26, [sp], #16
+    ldp x23, x24, [sp], #16
+    ldp x21, x22, [sp], #16
+    ldp x19, x20, [sp], #16
+    ldp x29, x30, [sp], #16
+    ret
 
 free_and_reset_all:
     stp x29, x30, [sp, #-16]!
